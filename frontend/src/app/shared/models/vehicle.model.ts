@@ -11,6 +11,7 @@ export interface Vehicle {
   driver?: number;
   driver_detail?: { id: number; username: string; role: string };
   insurance_expiry: string;
+  insurance_days_remaining: number;
   lat: string;
   lng: string;
 }

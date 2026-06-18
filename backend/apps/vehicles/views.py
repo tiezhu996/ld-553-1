@@ -1,3 +1,6 @@
+from datetime import timedelta
+
+from django.utils import timezone
 from rest_framework import decorators, response, status, viewsets
 
 from apps.common.constants.enums import VehicleStatus
@@ -21,6 +24,22 @@ class VehicleViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(type=vehicle_type)
         if state := self.request.query_params.get("status"):
             queryset = queryset.filter(status=state)
+        today = timezone.now().date()
+        if insurance_filter := self.request.query_params.get("insurance_status"):
+            if insurance_filter == "expired":
+                queryset = queryset.filter(insurance_expiry__lt=today)
+            elif insurance_filter == "expiring_7":
+                queryset = queryset.filter(insurance_expiry__gte=today, insurance_expiry__lte=today + timedelta(days=7))
+            elif insurance_filter == "expiring_30":
+                queryset = queryset.filter(insurance_expiry__gte=today, insurance_expiry__lte=today + timedelta(days=30))
+            elif insurance_filter == "expiring_90":
+                queryset = queryset.filter(insurance_expiry__gte=today, insurance_expiry__lte=today + timedelta(days=90))
+        if insurance_days_max := self.request.query_params.get("insurance_days_max"):
+            try:
+                days = int(insurance_days_max)
+                queryset = queryset.filter(insurance_expiry__lte=today + timedelta(days=days))
+            except ValueError:
+                pass
         return queryset
 
     def perform_create(self, serializer):
